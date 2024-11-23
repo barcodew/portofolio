@@ -1,103 +1,170 @@
-<title>Barcodew</title>
-<script type="text/javascript">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcodew</title>
+    <style>
+        body {
+            background-color: #000000;
+            margin: 0;
+            overflow: hidden;
+        }
 
-var snowmax=35
-var snowcolor=new Array("#AAAACC","#DDDDFF","#CCCCDD","#F3F3F3","#F0FFFF")
-var snowtype=new Array("Arial Black","Arial Narrow","Times","Comic Sans MS")
-var snowletter="*"
-var sinkspeed=0.6
-var snowmaxsize=22
-var snowminsize=8
-var snowingzone=1
+        #q {
+            font: 40px impact;
+            color: #ffffff;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
 
-var snow=new Array()
-var marginbottom
-var marginright
-var timer
-var i_snow=0
-var x_mv=new Array();
-var crds=new Array();
-var lftrght=new Array();
-var browserinfos=navigator.userAgent 
-var ie5=document.all&&document.getElementById&&!browserinfos.match(/Opera/)
-var ns6=document.getElementById&&!document.all
-var opera=browserinfos.match(/Opera/)  
-var browserok=ie5||ns6||opera
+        #capt {
+            font: 22px impact;
+            color: #64748b;
+            opacity: 0.7;
+        }
 
-function randommaker(range) {		
-	rand=Math.floor(range*Math.random())
-    return rand
-}
+        a {
+            opacity: 0.7;
+            color: #ffffff;
+            text-decoration: none;
+        }
 
-function initsnow() {
-	if (ie5 || opera) {
-		marginbottom = document.body.clientHeight
-		marginright = document.body.clientWidth
-	}
-	else if (ns6) {
-		marginbottom = window.innerHeight
-		marginright = window.innerWidth
-	}
-	var snowsizerange=snowmaxsize-snowminsize
-	for (i=0;i<=snowmax;i++) {
-		crds[i] = 0;                      
-    	lftrght[i] = Math.random()*15;         
-    	x_mv[i] = 0.03 + Math.random()/10;
-		snow[i]=document.getElementById("s"+i)
-		snow[i].style.fontFamily=snowtype[randommaker(snowtype.length)]
-		snow[i].size=randommaker(snowsizerange)+snowminsize
-		snow[i].style.fontSize=snow[i].size
-		snow[i].style.color=snowcolor[randommaker(snowcolor.length)]
-		snow[i].sink=sinkspeed*snow[i].size/5
-		if (snowingzone==1) {snow[i].posx=randommaker(marginright-snow[i].size)}
-		if (snowingzone==2) {snow[i].posx=randommaker(marginright/2-snow[i].size)}
-		if (snowingzone==3) {snow[i].posx=randommaker(marginright/2-snow[i].size)+marginright/4}
-		if (snowingzone==4) {snow[i].posx=randommaker(marginright/2-snow[i].size)+marginright/2}
-		snow[i].posy=randommaker(2*marginbottom-marginbottom-2*snow[i].size)
-		snow[i].style.left=snow[i].posx
-		snow[i].style.top=snow[i].posy
-	}
-	movesnow()
-}
+        a:visited {
+            color: #ffffff;
+        }
 
-function movesnow() {
-	for (i=0;i<=snowmax;i++) {
-		crds[i] += x_mv[i];
-		snow[i].posy+=snow[i].sink
-		snow[i].style.left=snow[i].posx+lftrght[i]*Math.sin(crds[i]);
-		snow[i].style.top=snow[i].posy
-		
-		if (snow[i].posy>=marginbottom-2*snow[i].size || parseInt(snow[i].style.left)>(marginright-3*lftrght[i])){
-			if (snowingzone==1) {snow[i].posx=randommaker(marginright-snow[i].size)}
-			if (snowingzone==2) {snow[i].posx=randommaker(marginright/2-snow[i].size)}
-			if (snowingzone==3) {snow[i].posx=randommaker(marginright/2-snow[i].size)+marginright/4}
-			if (snowingzone==4) {snow[i].posx=randommaker(marginright/2-snow[i].size)+marginright/2}
-			snow[i].posy=0
-		}
-	}
-	var timer=setTimeout("movesnow()",50)
-}
+        a:hover {
+            color: #64748b;
+        }
 
-for (i=0;i<=snowmax;i++) {
-	document.write("<span id='s"+i+"' style='position:absolute;top:-"+snowmaxsize+"'>"+snowletter+"</span>")
-}
-if (browserok) {
-	window.onload=initsnow
-}
-</script>
+        a:active {
+            color: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div id="q">
+        Website Under Maintenance.
+        <div id="capt">Contact me at <a href="https://github.com/barcodew">Barcodew</a>.</div>
+    </div>
 
-<style type="text/css">
-	body {background-color:#000000;}
-	#q {font: 40px impact;color:#ffffff;}
-	#capt {font: 22px impact;color:#64748b;}
-	a{
-		font-style: none;
-	}
-</style>
+    <canvas id="snowCanvas"></canvas>
 
-<table width=100% height=100%>
-	<td align=center>
-		<div id="q">Website Under Maintenance.</div>
-		<div id="capt">Contact me at <a href="https://github.com/barcodew">Barcodew</a>.</div>
-	</td>
-</table>
+    <script>
+        const canvas = document.getElementById('snowCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const snowflakes = [];
+        const colors = ["#AAAACC", "#DDDDFF", "#CCCCDD", "#F3F3F3", "#F0FFFF"];
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+
+        class Snowflake {
+            constructor(x, y, size, speed, color) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.speed = speed;
+                this.color = color;
+                this.angle = Math.random() * Math.PI * 2;
+                this.velocityX = 0; // Gerakan horizontal tambahan
+            }
+
+            update() {
+                // Gerakan horizontal dari mouse
+                this.x += this.velocityX;
+                this.y += this.speed;
+
+                // Gerakan bergelombang
+                this.x += Math.sin(this.angle) * 0.5;
+                this.angle += 0.01;
+
+                // Kembalikan ke atas jika jatuh ke bawah layar
+                if (this.y > canvas.height) {
+                    this.y = -this.size;
+                    this.x = Math.random() * canvas.width;
+                }
+
+                // Cegah salju keluar dari layar
+                if (this.x < -this.size) {
+                    this.x = canvas.width + this.size;
+                } else if (this.x > canvas.width + this.size) {
+                    this.x = -this.size;
+                }
+
+                // Perlambatan setelah mouse interaksi
+                this.velocityX *= 0.98; // Perlambatan agar lebih natural
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        function createSnowflakes(count) {
+            for (let i = 0; i < count; i++) {
+                const size = Math.random() * 5 + 2;
+                const speed = Math.random() * 2 + 0.5;
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                snowflakes.push(new Snowflake(x, y, size, speed, color));
+            }
+        }
+
+        function updateSnowflakes() {
+            snowflakes.forEach((flake) => {
+                // Interaksi mouse: dorong partikel menjauh dari pointer
+                const dx = flake.x - mouseX;
+                const dy = flake.y - mouseY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 100) { // Jika mouse dekat dengan partikel
+                    const force = (100 - distance) / 100;
+                    const directionX = dx / distance;
+                    const directionY = dy / distance;
+
+                    flake.velocityX += directionX * force * 5; // Efek dorongan horizontal
+                    flake.y += directionY * force * 2; // Efek dorongan vertikal
+                }
+
+                flake.update();
+            });
+        }
+
+        function drawSnowflakes() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            snowflakes.forEach((flake) => flake.draw());
+        }
+
+        function animate() {
+            updateSnowflakes();
+            drawSnowflakes();
+            requestAnimationFrame(animate);
+        }
+
+        createSnowflakes(150);
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        animate();
+    </script>
+</body>
+</html>
